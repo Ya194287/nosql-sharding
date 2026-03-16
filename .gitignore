@@ -1,0 +1,19 @@
+# Игнорируем все данные MongoDB (они пересоздаются Docker'ом)
+mongo-cluster/data/
+mongo-cluster/data/*
+
+# Временные файлы venv
+client/venv/
+client/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Другие ненужные
+.DS_Store
+Thumbs.db
+*.swp
+*.swo

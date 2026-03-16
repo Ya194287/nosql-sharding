@@ -1,0 +1,3 @@
+Collection,Mode,Ops,Repeats,Avg Throughput,Min,Max
+range,write,100000,3,27280.60,25487.90,29335.96
+hashed,write,100000,3,31760.42,26684.27,38713.32

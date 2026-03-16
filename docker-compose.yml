@@ -1,0 +1,97 @@
+services:
+
+  # Config Server Replica Set
+  mongo-config1:
+    image: mongo:7.0
+    container_name: mongo-config1
+    command: mongod --configsvr --replSet configReplSet --port 27019 --dbpath /data/db
+    volumes:
+      - ./mongo-cluster/data/config1:/data/db
+    ports:
+      - "27019:27019"
+    networks:
+      - mongo-net
+    healthcheck:
+      test: echo 'rs.status().ok' | mongosh --port 27019 --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  mongo-config2:
+    image: mongo:7.0
+    container_name: mongo-config2
+    command: mongod --configsvr --replSet configReplSet --port 27019 --dbpath /data/db
+    volumes:
+      - ./mongo-cluster/data/config2:/data/db
+    networks:
+      - mongo-net
+    depends_on:
+      mongo-config1:
+        condition: service_healthy
+    healthcheck:
+      test: echo 'rs.status().ok' | mongosh --port 27019 --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  mongo-config3:
+    image: mongo:7.0
+    container_name: mongo-config3
+    command: mongod --configsvr --replSet configReplSet --port 27019 --dbpath /data/db
+    volumes:
+      - ./mongo-cluster/data/config3:/data/db
+    networks:
+      - mongo-net
+    depends_on:
+      mongo-config1:
+        condition: service_healthy
+    healthcheck:
+      test: echo 'rs.status().ok' | mongosh --port 27019 --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    
+
+  # Shard 1
+  mongo-shard1:
+    image: mongo:7.0
+    container_name: mongo-shard1
+    command: mongod --shardsvr --replSet shard1ReplSet --port 27018 --dbpath /data/db
+    volumes:
+      - ./mongo-cluster/data/shard1:/data/db
+    networks:
+      - mongo-net
+
+  # Shard 2
+  mongo-shard2:
+    image: mongo:7.0
+    container_name: mongo-shard2
+    command: mongod --shardsvr --replSet shard2ReplSet --port 27018 --dbpath /data/db
+    volumes:
+      - ./mongo-cluster/data/shard2:/data/db
+    networks:
+      - mongo-net
+
+  # Mongos (роутер, к которому подключаться)
+  mongos:
+    image: mongo:7.0
+    container_name: mongos
+    command: mongos --configdb configReplSet/mongo-config1:27019,mongo-config2:27019,mongo-config3:27019 --port 27017 --bind_ip_all
+    ports:
+      - "27017:27017"
+    depends_on:
+      mongo-config1:
+        condition: service_healthy
+      mongo-config2:
+        condition: service_healthy
+      mongo-config3:
+        condition: service_healthy
+    networks:
+      - mongo-net
+
+networks:
+  mongo-net:
+    driver: bridge
